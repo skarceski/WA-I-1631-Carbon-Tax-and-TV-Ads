@@ -1,6 +1,7 @@
 
 library(tidyverse)
 
+
 # 2018 WA State November election results
 
 res_2018 <-
@@ -54,8 +55,8 @@ res_2018 <- res_2018 %>%
             filter(candidate %in% c("Yes", "Maria Cantwell"),
                    race %in% c("senate", "i_1631")) %>%
             group_by(precinct_id) %>%
-            summarize(dem_sen = sum(ifelse(race == "senate", vote_count, 0)),
-                      dem_sen_tot = sum(ifelse(race == "senate", tot_votes, 0)),
+            summarize(dem_sen_18 = sum(ifelse(race == "senate", vote_count, 0)),
+                      dem_sen_tot_18 = sum(ifelse(race == "senate", tot_votes, 0)),
                       i_1631 = sum(ifelse(race == "i_1631", vote_count, 0)),
                       i_1631_tot = sum(ifelse(race == "i_1631", tot_votes, 0))))
 
@@ -182,9 +183,9 @@ int_res_2018 <- int_res_2018 %>% left_join(acs)
 
 res_2016 <- read_csv("2016Gen_Precinct_Results_GIS-Ready.csv") %>%
     select(precinct_id = PrecinctCode, i_732_yes = G16I0732Y, i_732_no = G16I0732N,
-           dem_sen_yes = G16SENMURR, dem_sen_no = G16SENVANC) %>%
+           dem_sen_16 = G16SENMURR, dem_sen_no = G16SENVANC) %>%
     mutate(i_732_tot = i_732_yes + i_732_no,
-           dem_sen_tot = dem_sen_yes + dem_sen_no,
+           dem_sen_tot_16 = dem_sen_16 + dem_sen_no,
            county_code = str_sub(precinct_id, start = 1L, end = 2L)) %>%
     select(-c(i_732_no, dem_sen_no))
 
@@ -211,7 +212,7 @@ res_2016 <- st_transform(res_2016, crs = 26915)
 
 ar_validate(source = res_2016,
             target = acs_geometry,
-            varList = c("i_732_yes", "i_732_tot", "dem_sen_yes", "dem_sen_tot"),
+            varList = c("i_732_yes", "i_732_tot", "dem_sen_16", "dem_sen_tot_16"),
             method = "aw",
             verbose = T)
 
@@ -221,7 +222,7 @@ int_res_2016 <- aw_interpolate(acs_geometry, tid = tract_id,
                                source = res_2016, sid = precinct_id,
                                weight = "sum", output = "tibble",
                                extensive =  c("i_732_yes", "i_732_tot",
-                                              "dem_sen_yes", "dem_sen_tot"))
+                                              "dem_sen_16", "dem_sen_tot_16"))
 
 # join with 2018 data
 
@@ -237,6 +238,6 @@ full_data <- full_data %>%
                   select(media_market, county)) %>%
     left_join(read_csv("mm_ads.csv")) # dataframe containing media market ad measures
 
-    # write data to csv
+# write data to csv
 
-    write_csv(full_data, "full_data.csv")
+write_csv(full_data, "full_data.csv")
