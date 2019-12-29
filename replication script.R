@@ -1,6 +1,5 @@
 
 library(tidyverse)
-library(tidycensus)
 library(sf)
 library(areal)
 
