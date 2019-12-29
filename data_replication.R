@@ -1,7 +1,6 @@
 
 library(tidyverse)
 
-
 # 2018 WA State November election results
 
 res_2018 <-
