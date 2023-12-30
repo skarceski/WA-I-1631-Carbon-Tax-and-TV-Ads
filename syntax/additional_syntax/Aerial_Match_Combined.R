@@ -18,9 +18,11 @@ precinct_2018 <- precinct_2018 %>%
     mutate(precinct_code = str_pad(PrecinctCode, 8, side = "left", pad = "0"),
            # match the precinct ID from the shapefile
            precinct_id = paste0(CountyCode, precinct_code),
-           race = case_when(str_detect(Race, "U.S. Senator") ~ "dem_senate",
-                            str_detect(Race, "1631") ~ "yes_1631",
-                            str_detect(Race, "U.S. Representative") ~ "dem_house")) %>%
+           race = case_when(
+             str_detect(Race, "U.S. Senator") ~ "dem_senate",
+             str_detect(Race, "1631") ~ "yes_1631",
+             str_detect(Race, "U.S. Representative") ~ "dem_house")
+           ) %>%
     filter(PrecinctName != "Total",
            race %in% c("dem_senate", "yes_1631", "dem_house")) %>%
     select(-c(PrecinctCode, precinct_code, PrecinctName, Race)) %>%
@@ -186,43 +188,48 @@ write_csv(precinct_data, "precinct_results_2018.csv")
 
 library(tidycensus)
 
-acs_tracts <- get_acs(geography = "tract", state = "WA", geometry = T,
-                      variables = c(Med_Income = "B19013_001", Pop_Estimate = "B01001_001",
-                                    # Race/ethnicity variables:
-                                    Race_Total = "B02001_001",
-                                    Race_White = "B02001_002", Race_Black = "B02001_003", Race_Native = "B02001_004",
-                                    Race_Asian = "B02001_005", Race_HawPI = "B02001_006", Race_Other = "B02001_007",
-                                    Race_2More = "B02001_008", Hisp_Total = "B03002_001", Hisp_Lat = "B03002_012",
-                                    # education variables:
-                                    Ed_Total = "B15003_001", Ed_Bach = "B15003_022", Ed_Mast = "B15003_023",
-                                    Ed_Prof = "B15003_024", Ed_Doct = "B15003_025",
-                                    #industry:
-                                    Ind_Total = "C24070_001", Ind_AgMin = "C24070_002", Ind_Const = "C24070_003",
-                                    Ind_Manuf = "C24070_004", Ind_Trans = "C24070_007",
-                                    # age:
-                                    Age_1 = "B01001_014", Age_2 = "B01001_015", Age_3 = "B01001_016",
-                                    Age_4 = "B01001_017", Age_5 = "B01001_018", Age_6 = "B01001_019", Age_7 =  "B01001_020",
-                                    Age_8 = "B01001_021", Age_9 = "B01001_022", Age_10 = "B01001_023", Age_11 = "B01001_024",
-                                    Age_12 = "B01001_025", Age_13 = "B01001_038", Age_14 = "B01001_039", Age_15 = "B01001_040",
-                                    Age_16 = "B01001_041", Age_17 = "B01001_042", Age_18 = "B01001_043", Age_19 = "B01001_044",
-                                    Age_20 = "B01001_045", Age_21 = "B01001_046", Age_22 = "B01001_047", Age_23 = "B01001_048",
-                                    Age_24 = "B01001_049",
-                                    # misc. vars:
-                                    Pov_Total = "C17002_001", Pov_Und.50 = "C17002_002", Pov_.50_100 = "C17002_003",
-                                    Commute_Total = "B08301_001", Commute_Car = "B08301_002")) %>%
+acs_tracts <- get_acs(
+  geography = "tract", state = "WA", geometry = T,
+  variables = c(
+    Med_Income = "B19013_001", Pop_Estimate = "B01001_001",
+    # Race/ethnicity variables:
+    Race_Total = "B02001_001",
+    Race_White = "B02001_002", Race_Black = "B02001_003", Race_Native = "B02001_004",
+    Race_Asian = "B02001_005", Race_HawPI = "B02001_006", Race_Other = "B02001_007",
+    Race_2More = "B02001_008", Hisp_Total = "B03002_001", Hisp_Lat = "B03002_012",
+    # education variables:
+    Ed_Total = "B15003_001", Ed_Bach = "B15003_022", Ed_Mast = "B15003_023",
+    Ed_Prof = "B15003_024", Ed_Doct = "B15003_025",
+    #industry:
+    Ind_Total = "C24070_001", Ind_AgMin = "C24070_002", Ind_Const = "C24070_003",
+    Ind_Manuf = "C24070_004", Ind_Trans = "C24070_007",
+    # age:
+    Age_1 = "B01001_014", Age_2 = "B01001_015", Age_3 = "B01001_016",
+    Age_4 = "B01001_017", Age_5 = "B01001_018", Age_6 = "B01001_019", Age_7 =  "B01001_020",
+    Age_8 = "B01001_021", Age_9 = "B01001_022", Age_10 = "B01001_023", Age_11 = "B01001_024",
+    Age_12 = "B01001_025", Age_13 = "B01001_038", Age_14 = "B01001_039", Age_15 = "B01001_040",
+    Age_16 = "B01001_041", Age_17 = "B01001_042", Age_18 = "B01001_043", Age_19 = "B01001_044",
+    Age_20 = "B01001_045", Age_21 = "B01001_046", Age_22 = "B01001_047", Age_23 = "B01001_048",
+    Age_24 = "B01001_049",
+    # misc. vars:
+    Pov_Total = "C17002_001", Pov_Und.50 = "C17002_002", Pov_.50_100 = "C17002_003",
+    Commute_Total = "B08301_001", Commute_Car = "B08301_002"
+  )) %>%
     select(-moe) %>% group_by(GEOID) %>% spread(variable, estimate)
 
 # create new variables and ditch the useless ones
 
 acs_tracts <- acs_tracts %>%
-    mutate(over_40_count = Age_1 + Age_2 + Age_3 + Age_4 + Age_5 + Age_6 + Age_7 + Age_8 + Age_9 + Age_10 + Age_11 + Age_12 +
-               Age_13 + Age_14 + Age_15 + Age_16 + Age_16 + Age_17 + Age_18 + Age_19 + Age_20 + Age_21 + Age_22 + Age_23 +
-               + Age_24,
+    mutate(over_40_count = Age_1 + Age_2 + Age_3 + Age_4 + Age_5 + Age_6 + 
+             Age_7 + Age_8 + Age_9 + Age_10 + Age_11 + Age_12 +
+               Age_13 + Age_14 + Age_15 + Age_16 + Age_16 + Age_17 + Age_18 + 
+             Age_19 + Age_20 + Age_21 + Age_22 + Age_23 + Age_24,
            Ed_4_plus = Ed_Bach + Ed_Mast + Ed_Prof + Ed_Doct,
            Pov_Und = Pov_Und.50 + Pov_.50_100) %>%
-    select(-c(Age_1, Age_2, Age_3, Age_4, Age_5, Age_6, Age_7, Age_8, Age_9, Age_10, Age_11, Age_12,
-              Age_13, Age_14, Age_15, Age_16, Age_16, Age_17, Age_18, Age_19, Age_20, Age_21, Age_22, Age_23,
-              Age_24, Ed_Bach, Ed_Mast, Ed_Prof, Ed_Doct, Pov_Und.50, Pov_.50_100))
+    select(-c(Age_1, Age_2, Age_3, Age_4, Age_5, Age_6, Age_7, Age_8, Age_9, 
+              Age_10, Age_11, Age_12, Age_13, Age_14, Age_15, Age_16, Age_16, 
+              Age_17, Age_18, Age_19, Age_20, Age_21, Age_22, Age_23, Age_24, 
+              Ed_Bach, Ed_Mast, Ed_Prof, Ed_Doct, Pov_Und.50, Pov_.50_100))
 
 acs_tracts <- acs_tracts %>%
     mutate(race_black = 100*Race_Black/Race_Total,
@@ -242,9 +249,9 @@ acs_tracts <- acs_tracts %>%
            commute_car = 100*Commute_Car/Commute_Total,
            over_40 = 100*over_40_count/Pop_Estimate) %>%
     select(GEOID, NAME, geometry, Med_Income, Pop_Estimate,
-           race_black, race_white, race_native, race_asian, race_hawpi, race_other,
-           race_2more, hisp_lat, edu_bach, ind_agmin, ind_const, ind_manuf, ind_trans,
-           under_pov, commute_car, over_40) %>%
+           race_black, race_white, race_native, race_asian, race_hawpi, 
+           race_other, race_2more, hisp_lat, edu_bach, ind_agmin, ind_const, 
+           ind_manuf, ind_trans, under_pov, commute_car, over_40) %>%
     rename(tract_id = GEOID, tract_name = NAME)
 
 # craete county variable to match with code/media data
@@ -259,12 +266,13 @@ test_county = str_split_fixed(str_split_fixed(test_tract,
                               n = Inf)[1,1]
 
 acs_tracts = acs_tracts %>%
-    mutate(county = mapply(FUN = function(county)  str_split_fixed(str_split_fixed(county,
-                                                                                   pattern = ", ",
-                                                                                   n = Inf)[1,2],
-                                                                   pattern = " County",
-                                                                   n = Inf)[1,1],
-                           tract_name))
+    mutate(county = mapply(FUN = function(county)  str_split_fixed(
+      str_split_fixed(county,
+                      pattern = ", ",
+                      n = Inf)[1,2],
+      pattern = " County",
+      n = Inf)[1,1],
+      tract_name))
 
 acs_tracts <- acs_tracts %>% ungroup()
 
@@ -343,4 +351,4 @@ ggplot(acs_tracts, aes(density)) +
 
 density(acs_tracts$density, na.rm = T)
 
-write_csv(acs_data, "interp_results_acs_2018.csv")
+write_csv(acs_data, "interp_results_acs_2018.csv") 

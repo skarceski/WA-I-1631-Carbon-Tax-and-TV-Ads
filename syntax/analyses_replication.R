@@ -3,9 +3,9 @@ library(tidyverse)
 library(lme4)
 library(sjPlot)
 
-data <- read_csv("interp_results_acs_2018.csv") %>% 
+data <- read_csv("data/interp_results_acs_2018.csv") %>% 
     mutate(density = as.numeric(density)) %>% 
-    left_join(read_csv("interpolated_2016_results.csv") %>% 
+    left_join(read_csv("data/interpolated_2016_results.csv") %>% 
                   mutate(yes_732_p = (100*v_yes_732)/base_732) %>% 
                   select(tract_id, yes_732_p, yes_732 = v_yes_732, 
                          tot_732 = base_732)) %>% 
@@ -24,5 +24,4 @@ tab_model(lmer(yes_1631_p ~ yn_ratio + yes_732_p + dem_senate_p +
                    race_black + race_native + race_asian + race_hawpi + race_other + race_2more + hisp_lat + 
                    (1|media_market) + (1|media_market:county_code), data = data,
                control = lmerControl(optimizer = "Nelder_Mead")),
-          show.ci = F, show.se = T, p.style = "a")
-
+          show.ci = F, show.se = T, p.style = "stars")
